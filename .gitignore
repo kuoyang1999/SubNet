@@ -1,0 +1,36 @@
+# Ignore Python bytecode
+*.pyc
+__pycache__/
+
+# Ignore virtual environment directories
+venv/
+env/
+.venv/
+.env/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore data files
+data/
+*.csv
+*.tsv
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore logs
+*.log
+
+# Ignore other unwanted files
+.idea/
+.vscode/
+
+# Ignore models
+trainers/gpt2/webnlg_models
+trainers/gpt2/webnlg_evals
+trainers/gpt2/saved-for-eval
+trainers/gpt2/triples_models
+trainers/gpt2/wandb
+trainers/gpt2/cache

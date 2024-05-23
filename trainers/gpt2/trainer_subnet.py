@@ -19,9 +19,9 @@ from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import RandomSampler, Sampler, SequentialSampler
 from tqdm.auto import tqdm, trange
 
-from .data.data_collator import DataCollator, DataCollatorWithPadding, default_data_collator
-from .file_utils import is_datasets_available, is_torch_tpu_available
-from .integrations import (
+from transformers.data.data_collator import DataCollator, DataCollatorWithPadding, default_data_collator
+from transformers.file_utils import is_datasets_available, is_torch_tpu_available
+from transformers.integrations import (
     default_hp_search_backend,
     is_comet_available,
     is_optuna_available,
@@ -31,11 +31,11 @@ from .integrations import (
     run_hp_search_optuna,
     run_hp_search_ray,
 )
-from .modeling_auto import MODEL_FOR_QUESTION_ANSWERING_MAPPING
-from .modeling_utils import PreTrainedModel
-from .optimization import AdamW, get_linear_schedule_with_warmup
-from .tokenization_utils_base import PreTrainedTokenizerBase
-from .trainer_utils import (
+from transformers.modeling_auto import MODEL_FOR_QUESTION_ANSWERING_MAPPING
+from transformers.modeling_utils import PreTrainedModel
+from transformers.optimization import AdamW, get_linear_schedule_with_warmup
+from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+from transformers.trainer_utils import (
     PREFIX_CHECKPOINT_DIR,
     BestRun,
     EvalPrediction,
@@ -52,8 +52,8 @@ from .trainer_utils import (
     nested_xla_mesh_reduce,
     set_seed,
 )
-from .training_args import TrainingArguments
-from .utils import logging
+from transformers.training_args import TrainingArguments
+from transformers.utils import logging
 
 
 _use_native_amp = False
@@ -61,7 +61,7 @@ _use_apex = False
 
 # Check if Pytorch version >= 1.6 to switch between Native AMP and Apex
 if version.parse(torch.__version__) < version.parse("1.6"):
-    from .file_utils import is_apex_available
+    from transformers.file_utils import is_apex_available
 
     if is_apex_available():
         from apex import amp
@@ -168,7 +168,7 @@ def get_tpu_sampler(dataset: Dataset):
     return DistributedSampler(dataset, num_replicas=xm.xrt_world_size(), rank=xm.get_ordinal())
 
 
-class Trainer:
+class Trainer_Subnet:
     """
     Trainer is a simple but feature-complete training and eval loop for PyTorch,
     optimized for 🤗 Transformers.
@@ -806,21 +806,35 @@ class Trainer:
                     self.global_step += 1
                     self.epoch = epoch + (step + 1) / len(epoch_iterator)
 
-                    if (self.args.logging_steps > 0 and self.global_step % self.args.logging_steps == 0) or (
-                        self.global_step == 1 and self.args.logging_first_step
-                    ):
-                        logs: Dict[str, float] = {}
-                        tr_loss_scalar = tr_loss.item()
-                        logs["loss"] = (tr_loss_scalar - logging_loss_scalar) / self.args.logging_steps
-                        # backward compatibility for pytorch schedulers
-                        logs["learning_rate"] = (
-                            self.lr_scheduler.get_last_lr()[0]
-                            if version.parse(torch.__version__) >= version.parse("1.4")
-                            else self.lr_scheduler.get_lr()[0]
-                        )
-                        logging_loss_scalar = tr_loss_scalar
+                    # if (self.args.logging_steps > 0 and self.global_step % self.args.logging_steps == 0) or (
+                    #     self.global_step == 1 and self.args.logging_first_step):
+                    # # if (self.args.logging_steps > 0 and self.global_step % self.args.logging_steps == 0) or (
+                    # #     self.global_step == 1):
+                    #     logs: Dict[str, float] = {}
+                    #     tr_loss_scalar = tr_loss.item()
+                    #     logs["loss"] = (tr_loss_scalar - logging_loss_scalar) / self.args.logging_steps
+                    #     # backward compatibility for pytorch schedulers
+                    #     logs["learning_rate"] = (
+                    #         self.lr_scheduler.get_last_lr()[0]
+                    #         if version.parse(torch.__version__) >= version.parse("1.4")
+                    #         else self.lr_scheduler.get_lr()[0]
+                    #     )
+                    #     logging_loss_scalar = tr_loss_scalar
 
-                        self.log(logs)
+                    #     self.log(logs)
+
+                    logs: Dict[str, float] = {}
+                    tr_loss_scalar = tr_loss.item()
+                    logs["loss"] = (tr_loss_scalar - logging_loss_scalar) / self.args.logging_steps
+                    # backward compatibility for pytorch schedulers
+                    logs["learning_rate"] = (
+                        self.lr_scheduler.get_last_lr()[0]
+                        if version.parse(torch.__version__) >= version.parse("1.4")
+                        else self.lr_scheduler.get_lr()[0]
+                    )
+                    logging_loss_scalar = tr_loss_scalar
+
+                    self.log(logs)
 
                     if (
                         self.args.evaluation_strategy == EvaluationStrategy.STEPS
@@ -1137,6 +1151,7 @@ class Trainer:
                 scaled_loss.backward()
         else:
             # print(loss)
+            # loss = Variable(loss, requires_grad = True)
             loss.backward()
 
         # print('max allocated_memory:', torch.cuda.max_memory_allocated(0), 'total_memory:',
@@ -1520,9 +1535,6 @@ class Trainer:
 
         with torch.no_grad():
             # outputs = model.forward_weighted(**inputs)
-            # for key in inputs.keys():
-            #     print(f"{key}.shape", inputs[key].shape)
-            # print("inputs:", inputs)
             outputs = model(**inputs)
             if has_labels:
                 # The .mean() is to reduce in case of distributed training

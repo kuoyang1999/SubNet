@@ -1,0 +1,1 @@
+The total number of trainable subnet parameters is 100663296

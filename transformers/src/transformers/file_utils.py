@@ -817,7 +817,7 @@ def get_from_cache(
         cache_dir = TRANSFORMERS_CACHE
     if isinstance(cache_dir, Path):
         cache_dir = str(cache_dir)
-
+    
     os.makedirs(cache_dir, exist_ok=True)
 
     etag = None
